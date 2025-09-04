@@ -456,6 +456,8 @@ def my_loans(request):
     # Update overdue status and calculate fines
     for loan in loans:
         if loan.status == 'active' and loan.is_overdue():
+            loan.status = 'overdue'
+            loan.save()
             fine_amount = loan.calculate_fine()
             if fine_amount > 0:
                 # Create fine if it doesn't exist
@@ -472,9 +474,15 @@ def my_loans(request):
                     fine.amount = fine_amount
                     fine.save()
             loan.save()
-    
+
+    active_loans = loans.filter(status='active').count()
+    overdue_loans = loans.filter(status='overdue').count()
+    total_fines = sum(loan.fine_amount for loan in loans if loan.fine_amount)
     context = {
         'loans': loans,
+        'active_loans': active_loans,   
+        'overdue_loans': overdue_loans,
+        'total_fines': total_fines,     
     }
     return render(request, 'library/my_loans.html', context)
 
