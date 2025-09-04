@@ -1,0 +1,653 @@
+<!-- library/templates/library/my_reservations.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}My Reservations - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-bookmark text-info"></i> My Reservations</h2>
+            <div class="d-flex gap-2">
+                <a href="{% url 'book_list' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Make New Reservation
+                </a>
+                <a href="{% url 'my_loans' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-book-reader"></i> My Loans
+                </a>
+                <a href="{% url 'profile' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-warning">
+            <div class="card-body">
+                <div class="text-warning">
+                    <i class="fas fa-clock fa-3x mb-2"></i>
+                    <h3>{% for res in reservations %}{% if res.status == 'pending' %}1{% else %}0{% endif %}{% endfor %}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-success">
+            <div class="card-body">
+                <div class="text-success">
+                    <i class="fas fa-check-circle fa-3x mb-2"></i>
+                    <h3>{% for res in reservations %}{% if res.status == 'available' %}1{% else %}0{% endif %}{% endfor %}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Ready for Pickup</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-info">
+            <div class="card-body">
+                <div class="text-info">
+                    <i class="fas fa-handshake fa-3x mb-2"></i>
+                    <h3>{% for res in reservations %}{% if res.status == 'fulfilled' %}1{% else %}0{% endif %}{% endfor %}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Fulfilled</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-secondary">
+            <div class="card-body">
+                <div class="text-secondary">
+                    <i class="fas fa-list fa-3x mb-2"></i>
+                    <h3>{{ reservations|length }}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Total Reservations</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Reservations Alert -->
+{% if available_reservation %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success reservation-alert shadow">
+            <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle fa-3x"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-gift"></i> Great News! Your Reserved Book is Ready
+                    </h5>
+                    <p class="mb-2">
+                        "<strong>{{ available_reservation.book.title }}</strong>" is now available for pickup!
+                        You have until <strong>{{ available_reservation.expiry_date|date:"F j, Y" }}</strong> to collect it.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'borrow_book' available_reservation.book.id %}" class="btn btn-success">
+                            <i class="fas fa-book-reader"></i> Borrow Now
+                        </a>
+                        <a href="{% url 'book_detail' available_reservation.book.id %}" class="btn btn-outline-success">
+                            <i class="fas fa-eye"></i> View Book Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Reservations Table -->
+{% if reservations %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i> Reservation History
+                        </h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="reservationFilter" id="filterAll" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="filterAll">All</label>
+
+                            <input type="radio" class="btn-check" name="reservationFilter" id="filterPending" autocomplete="off">
+                            <label class="btn btn-outline-warning" for="filterPending">Pending</label>
+
+                            <input type="radio" class="btn-check" name="reservationFilter" id="filterAvailable" autocomplete="off">
+                            <label class="btn btn-outline-success" for="filterAvailable">Available</label>
+
+                            <input type="radio" class="btn-check" name="reservationFilter" id="filterFulfilled" autocomplete="off">
+                            <label class="btn btn-outline-info" for="filterFulfilled">Fulfilled</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-book"></i> Book</th>
+                                    <th><i class="fas fa-user-edit"></i> Author(s)</th>
+                                    <th><i class="fas fa-calendar-plus"></i> Reserved</th>
+                                    <th><i class="fas fa-clock"></i> Expires</th>
+                                    <th><i class="fas fa-flag"></i> Status</th>
+                                    <th><i class="fas fa-info-circle"></i> Queue Position</th>
+                                    <th><i class="fas fa-cogs"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                    <tr class="reservation-row reservation-{{ reservation.status }} 
+                                        {% if reservation.status == 'available' %}table-success
+                                        {% elif reservation.status == 'pending' %}table-warning
+                                        {% elif reservation.status == 'fulfilled' %}table-info
+                                        {% elif reservation.status == 'expired' %}table-danger
+                                        {% elif reservation.status == 'cancelled' %}table-secondary
+                                        {% endif %}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if reservation.book.book_cover %}
+                                                    <img src="{{ reservation.book.book_cover.url }}" class="rounded me-3 shadow-sm" style="width: 50px; height: 65px; object-fit: cover;" alt="{{ reservation.book.title }}">
+                                                {% else %}
+                                                    <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 50px; height: 65px;">
+                                                        <i class="fas fa-book text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <strong class="text-primary">{{ reservation.book.title|truncatechars:30 }}</strong><br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-barcode"></i> ISBN: {{ reservation.book.isbn }}
+                                                    </small><br>
+                                                    {% if reservation.book.category %}
+                                                        <span class="badge bg-secondary">{{ reservation.book.category.name }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% for author in reservation.book.authors.all %}
+                                                <span class="badge bg-light text-dark border">{{ author.name }}</span>
+                                                {% if not forloop.last %}<br>{% endif %}
+                                            {% empty %}
+                                                <span class="text-muted">No author listed</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-calendar-plus text-info"></i>
+                                            {{ reservation.reservation_date|date:"M d, Y" }}<br>
+                                            <small class="text-muted">{{ reservation.reservation_date|time:"g:i A" }}</small>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-clock text-warning"></i>
+                                            {{ reservation.expiry_date|date:"M d, Y" }}<br>
+                                            {% if reservation.is_expired and reservation.status != 'fulfilled' %}
+                                                <small class="text-danger">
+                                                    <i class="fas fa-exclamation-triangle"></i> Expired
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">{{ reservation.expiry_date|time:"g:i A" }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if reservation.status == 'pending' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-hourglass-half"></i> Pending
+                                                </span>
+                                            {% elif reservation.status == 'available' %}
+                                                <span class="badge bg-success pulse">
+                                                    <i class="fas fa-check-circle"></i> Available
+                                                </span>
+                                            {% elif reservation.status == 'fulfilled' %}
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-handshake"></i> Fulfilled
+                                                </span>
+                                            {% elif reservation.status == 'cancelled' %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-times-circle"></i> Cancelled
+                                                </span>
+                                            {% elif reservation.status == 'expired' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-clock"></i> Expired
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if reservation.status == 'pending' %}
+                                                <div class="position-indicator">
+                                                    <span class="badge bg-primary fs-6">#{{ forloop.counter }}</span>
+                                                    <br><small class="text-muted">in queue</small>
+                                                </div>
+                                            {% elif reservation.status == 'available' %}
+                                                <div class="text-success">
+                                                    <i class="fas fa-trophy fa-lg"></i>
+                                                    <br><small>Your turn!</small>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="fas fa-minus"></i>
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group-vertical btn-group-sm">
+                                                {% if reservation.status == 'available' %}
+                                                    <a href="{% url 'borrow_book' reservation.book.id %}" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-book-reader"></i> Borrow Now
+                                                    </a>
+                                                    <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-outline-danger btn-sm">
+                                                        <i class="fas fa-times"></i> Cancel
+                                                    </a>
+                                                {% elif reservation.status == 'pending' %}
+                                                    <a href="{% url 'book_detail' reservation.book.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i> View Book
+                                                    </a>
+                                                    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal{{ reservation.id }}">
+                                                        <i class="fas fa-times"></i> Cancel
+                                                    </button>
+                                                {% else %}
+                                                    <a href="{% url 'book_detail' reservation.book.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i> View Book
+                                                    </a>
+                                                    {% if reservation.status == 'fulfilled' or reservation.status == 'expired' %}
+                                                        <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#reserveAgainModal{{ reservation.id }}">
+                                                            <i class="fas fa-redo"></i> Reserve Again
+                                                        </button>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Cancel Confirmation Modal -->
+                                    {% if reservation.status == 'pending' %}
+                                        <div class="modal fade" id="cancelModal{{ reservation.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-warning">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-exclamation-triangle"></i> Cancel Reservation
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body text-center">
+                                                        <i class="fas fa-bookmark fa-3x text-warning mb-3"></i>
+                                                        <h5>Cancel reservation for:</h5>
+                                                        <p class="text-primary"><strong>"{{ reservation.book.title }}"</strong></p>
+                                                        <p class="text-muted">Are you sure you want to cancel this reservation? You'll lose your place in the queue.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                            <i class="fas fa-arrow-left"></i> Keep Reservation
+                                                        </button>
+                                                        <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-danger">
+                                                            <i class="fas fa-times"></i> Yes, Cancel
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Reserve Again Modal -->
+                                    {% if reservation.status == 'fulfilled' or reservation.status == 'expired' %}
+                                        <div class="modal fade" id="reserveAgainModal{{ reservation.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-info text-white">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-redo"></i> Reserve Again
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body text-center">
+                                                        <i class="fas fa-heart fa-3x text-danger mb-3"></i>
+                                                        <h5>Loved this book?</h5>
+                                                        <p class="text-primary"><strong>"{{ reservation.book.title }}"</strong></p>
+                                                        <p class="text-muted">Make a new reservation to read it again or recommend it to someone else!</p>
+                                                        
+                                                        {% if reservation.book.available_copies > 0 %}
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle"></i> This book is currently available for immediate borrowing!
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="alert alert-info">
+                                                                <i class="fas fa-info-circle"></i> This book is currently on loan. You'll be added to the reservation queue.
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                            <i class="fas fa-times"></i> Not Now
+                                                        </button>
+                                                        {% if reservation.book.available_copies > 0 %}
+                                                            <a href="{% url 'borrow_book' reservation.book.id %}" class="btn btn-success">
+                                                                <i class="fas fa-book-reader"></i> Borrow Now
+                                                            </a>
+                                                        {% else %}
+                                                            <a href="{% url 'reserve_book' reservation.book.id %}" class="btn btn-info">
+                                                                <i class="fas fa-bookmark"></i> Reserve Again
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation Tips -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> Reservation Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                <h6>Pickup Window</h6>
+                                <p class="small text-muted">You have 7 days to pick up your reserved book once it becomes available.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-bell fa-2x text-primary mb-2"></i>
+                                <h6>Notifications</h6>
+                                <p class="small text-muted">You'll receive an email notification when your reserved book is ready.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-list-ol fa-2x text-success mb-2"></i>
+                                <h6>Queue System</h6>
+                                <p class="small text-muted">Books are allocated on a first-come, first-served basis based on reservation date.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow text-center">
+                <div class="card-body py-5">
+                    <i class="fas fa-bookmark fa-5x text-muted mb-4"></i>
+                    <h3>No Reservations Yet</h3>
+                    <p class="lead text-muted">You haven't made any book reservations.</p>
+                    <p>When a book you want is currently unavailable, you can reserve it and we'll notify you when it's ready!</p>
+                    <div class="mt-4">
+                        <a href="{% url 'book_list' %}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-search"></i> Browse Books
+                        </a>
+                        <a href="{% url 'my_loans' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-book-reader"></i> My Loans
+                        </a>
+                    </div>
+                    
+                    <!-- How to Reserve Guide -->
+                    <div class="mt-5">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-question-circle"></i> How to Make a Reservation
+                                </h5>
+                                <div class="row text-start">
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-primary rounded-circle me-2">1</span>
+                                            <span>Find a book you want to read</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-primary rounded-circle me-2">2</span>
+                                            <span>If it's not available, click "Reserve"</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-primary rounded-circle me-2">3</span>
+                                            <span>We'll notify you when it's ready!</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Reservation filtering functionality
+    const filterButtons = document.querySelectorAll('input[name="reservationFilter"]');
+    const reservationRows = document.querySelectorAll('.reservation-row');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const filter = this.id.replace('filter', '').toLowerCase();
+            
+            reservationRows.forEach(row => {
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else {
+                    const rowStatus = row.classList.contains(`reservation-${filter}`);
+                    row.style.display = rowStatus ? '' : 'none';
+                }
+            });
+            
+            updateTableVisibility();
+        });
+    });
+    
+    function updateTableVisibility() {
+        const visibleRows = Array.from(reservationRows).filter(row => row.style.display !== 'none');
+        const tableBody = document.querySelector('tbody');
+        
+        if (visibleRows.length === 0) {
+            if (!document.querySelector('.no-results-row')) {
+                const noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-row';
+                noResultsRow.innerHTML = `
+                    <td colspan="7" class="text-center py-4">
+                        <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No reservations match the selected filter.</p>
+                    </td>
+                `;
+                tableBody.appendChild(noResultsRow);
+            }
+        } else {
+            const noResultsRow = document.querySelector('.no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+    }
+    
+    // Add pulsing animation to available reservations
+    const availableBadges = document.querySelectorAll('.badge.bg-success.pulse');
+    availableBadges.forEach(badge => {
+        setInterval(() => {
+            badge.style.opacity = badge.style.opacity === '0.5' ? '1' : '0.5';
+        }, 1000);
+    });
+    
+    // Auto-refresh page every 5 minutes to check for status updates
+    setInterval(() => {
+        console.log('Checking for reservation updates...');
+        // You can implement AJAX calls here to update reservation statuses
+    }, 300000); // 5 minutes
+    
+    // Countdown timer for expiring reservations
+    function updateCountdowns() {
+        const availableReservations = document.querySelectorAll('.reservation-available');
+        
+        availableReservations.forEach(row => {
+            const expiryCell = row.querySelector('td:nth-child(4)');
+            const expiryDateStr = expiryCell.getAttribute('data-expiry');
+            
+            if (expiryDateStr) {
+                const expiryDate = new Date(expiryDateStr);
+                const now = new Date();
+                const timeLeft = expiryDate - now;
+                
+                if (timeLeft > 0) {
+                    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let countdownText = '';
+                    if (days > 0) {
+                        countdownText = `${days}d ${hours}h left`;
+                    } else if (hours > 0) {
+                        countdownText = `${hours}h ${minutes}m left`;
+                    } else {
+                        countdownText = `${minutes}m left`;
+                        // Add urgency styling for less than 1 hour
+                        expiryCell.classList.add('text-danger');
+                    }
+                    
+                    const countdownSpan = expiryCell.querySelector('.countdown') || document.createElement('small');
+                    countdownSpan.className = 'countdown text-warning d-block';
+                    countdownSpan.innerHTML = `<i class="fas fa-hourglass-half"></i> ${countdownText}`;
+                    
+                    if (!expiryCell.querySelector('.countdown')) {
+                        expiryCell.appendChild(countdownSpan);
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update countdowns every minute
+    updateCountdowns();
+    setInterval(updateCountdowns, 60000);
+    
+    // Initialize tooltips
+    const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipElements.forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
+    
+    // Add sound notification for available reservations (optional)
+    function checkForAvailableReservations() {
+        const availableCount = document.querySelectorAll('.reservation-available').length;
+        
+        if (availableCount > 0 && !sessionStorage.getItem('notificationShown')) {
+            // Show browser notification if supported
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Library Reservation Ready!', {
+                    body: `You have ${availableCount} book${availableCount > 1 ? 's' : ''} ready for pickup.`,
+                    icon: '/static/library/images/book-icon.png'
+                });
+            }
+            
+            sessionStorage.setItem('notificationShown', 'true');
+        }
+    }
+    
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
+    checkForAvailableReservations();
+    
+    // Print functionality
+    const printBtn = document.createElement('button');
+    printBtn.className = 'btn btn-outline-secondary btn-sm';
+    printBtn.innerHTML = '<i class="fas fa-print"></i> Print';
+    printBtn.onclick = function() {
+        window.print();
+    };
+    
+    const headerActions = document.querySelector('.d-flex.gap-2');
+    if (headerActions) {
+        headerActions.appendChild(printBtn);
+    }
+});
+
+// CSS for animations and print styles
+const additionalStyles = `
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .position-indicator {
+        animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
+    }
+    
+    @media print {
+        .btn, .modal, .card-header .btn-group { display: none !important; }
+        .card { border: 1px solid #000 !important; }
+        .table { font-size: 12px; }
+        body { print-color-adjust: exact; }
+        .alert { border: 1px solid #000 !important; }
+    }
+    
+    .reservation-alert {
+        border-left: 4px solid #0dcaf0;
+        animation: slideInLeft 0.5s ease-out;
+    }
+    
+    @keyframes slideInLeft {
+        from {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    .table-hover tbody tr:hover {
+        transform: scale(1.02);
+        transition: transform 0.2s ease-in-out;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock %}

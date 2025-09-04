@@ -1,0 +1,323 @@
+<!-- library/templates/library/register.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}Register - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h3><i class="fas fa-user-plus"></i> Create Your Account</h3>
+                <p class="mb-0">Join our library community today!</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Name Fields Row -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user"></i> First Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.first_name.errors %}
+                                            <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user"></i> Last Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.last_name.errors %}
+                                            <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Username Field -->
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="fas fa-at"></i> Username <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user-circle"></i></span>
+                            {{ form.username }}
+                        </div>
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.username.errors %}
+                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> Username must be unique and contain only letters, numbers, and @/./+/-/_ characters.
+                        </div>
+                    </div>
+                    
+                    <!-- Email Field -->
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <i class="fas fa-envelope"></i> Email Address <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            {{ form.email }}
+                        </div>
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.email.errors %}
+                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> We'll use this email for account notifications and password recovery.
+                        </div>
+                    </div>
+                    
+                    <!-- Password Fields Row -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                    <i class="fas fa-lock"></i> Password <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    {{ form.password1 }}
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword1" onclick="togglePasswordVisibility('id_password1', 'togglePassword1')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% if form.password1.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.password1.errors %}
+                                            <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                    <i class="fas fa-lock"></i> Confirm Password <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    {{ form.password2 }}
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword2" onclick="togglePasswordVisibility('id_password2', 'togglePassword2')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% if form.password2.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.password2.errors %}
+                                            <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Requirements -->
+                    <div class="mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-2">
+                                    <i class="fas fa-shield-alt text-primary"></i> Password Requirements:
+                                </h6>
+                                <ul class="list-unstyled mb-0 small">
+                                    <li><i class="fas fa-check text-success"></i> At least 8 characters long</li>
+                                    <li><i class="fas fa-check text-success"></i> Cannot be too similar to your other personal information</li>
+                                    <li><i class="fas fa-check text-success"></i> Cannot be a commonly used password</li>
+                                    <li><i class="fas fa-check text-success"></i> Cannot be entirely numeric</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Terms and Conditions -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                I agree to the <a href="#" class="text-primary">Terms of Service</a> and 
+                                <a href="#" class="text-primary">Privacy Policy</a> <span class="text-danger">*</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg" id="registerBtn">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Divider -->
+                <hr class="my-4">
+                
+                <!-- Login Link -->
+                <div class="text-center">
+                    <p class="mb-0">
+                        Already have an account? 
+                        <a href="{% url 'login' %}" class="text-primary fw-bold text-decoration-none">
+                            <i class="fas fa-sign-in-alt"></i> Sign In Here
+                        </a>
+                    </p>
+                </div>
+                
+                <!-- Benefits Section -->
+                <div class="mt-4">
+                    <div class="card bg-light border-0">
+                        <div class="card-body py-3">
+                            <h6 class="card-title text-center mb-3">
+                                <i class="fas fa-star text-warning"></i> Library Membership Benefits
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <i class="fas fa-book fa-2x text-primary mb-2"></i>
+                                    <p class="small mb-0">Borrow Books</p>
+                                </div>
+                                <div class="col-4">
+                                    <i class="fas fa-bookmark fa-2x text-info mb-2"></i>
+                                    <p class="small mb-0">Make Reservations</p>
+                                </div>
+                                <div class="col-4">
+                                    <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                                    <p class="small mb-0">Write Reviews</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Password visibility toggle function
+function togglePasswordVisibility(passwordFieldId, buttonId) {
+    const passwordField = document.getElementById(passwordFieldId);
+    const toggleButton = document.getElementById(buttonId);
+    const icon = toggleButton.querySelector('i');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Form validation and enhancement
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const registerBtn = document.getElementById('registerBtn');
+    const agreeTerms = document.getElementById('agreeTerms');
+    
+    // Enable/disable submit button based on terms checkbox
+    function updateSubmitButton() {
+        registerBtn.disabled = !agreeTerms.checked;
+        if (agreeTerms.checked) {
+            registerBtn.classList.remove('btn-secondary');
+            registerBtn.classList.add('btn-primary');
+        } else {
+            registerBtn.classList.remove('btn-primary');
+            registerBtn.classList.add('btn-secondary');
+        }
+    }
+    
+    agreeTerms.addEventListener('change', updateSubmitButton);
+    updateSubmitButton(); // Initial check
+    
+    // Form submission handling
+    form.addEventListener('submit', function(e) {
+        if (!agreeTerms.checked) {
+            e.preventDefault();
+            alert('Please agree to the Terms of Service and Privacy Policy to continue.');
+            return false;
+        }
+        
+        // Show loading state
+        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+        registerBtn.disabled = true;
+    });
+    
+    // Real-time password validation
+    const password1 = document.getElementById('id_password1');
+    const password2 = document.getElementById('id_password2');
+    
+    if (password1 && password2) {
+        function validatePasswords() {
+            if (password1.value && password2.value) {
+                if (password1.value === password2.value) {
+                    password2.classList.remove('is-invalid');
+                    password2.classList.add('is-valid');
+                } else {
+                    password2.classList.remove('is-valid');
+                    password2.classList.add('is-invalid');
+                }
+            }
+        }
+        
+        password1.addEventListener('input', validatePasswords);
+        password2.addEventListener('input', validatePasswords);
+    }
+    
+    // Username availability check (optional - requires AJAX endpoint)
+    const usernameField = document.getElementById('id_username');
+    if (usernameField) {
+        let timeout;
+        usernameField.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const username = this.value;
+            
+            if (username.length >= 3) {
+                timeout = setTimeout(() => {
+                    // You can add AJAX call here to check username availability
+                    console.log('Checking username availability:', username);
+                }, 500);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,516 @@
+<!-- library/templates/library/my_fines.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}My Fines - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-dollar-sign text-warning"></i> My Fines</h2>
+            <div class="d-flex gap-2">
+                <a href="{% url 'my_loans' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-book-reader"></i> My Loans
+                </a>
+                <a href="{% url 'profile' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Outstanding Balance Alert -->
+{% if total_pending > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning fine-alert shadow">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-credit-card"></i> Outstanding Balance: ${{ total_pending }}
+                        </h5>
+                        <p class="mb-2">You have pending fines that need to be paid. Please settle your balance to continue borrowing books.</p>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                <i class="fas fa-credit-card"></i> View Payment Options
+                            </button>
+                            <a href="{% url 'book_list' %}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-book"></i> Browse Books (After Payment)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success shadow">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">Great! No Outstanding Fines</h5>
+                        <p class="mb-0">Your account is in good standing. Keep up the excellent library etiquette!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 {% if total_pending > 0 %}border-warning{% else %}border-success{% endif %}">
+            <div class="card-body">
+                <div class="{% if total_pending > 0 %}text-warning{% else %}text-success{% endif %}">
+                    <i class="fas fa-dollar-sign fa-3x mb-2"></i>
+                    <h3>${{ total_pending|floatformat:2 }}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Pending Fines</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-success">
+            <div class="card-body">
+                <div class="text-success">
+                    <i class="fas fa-check-circle fa-3x mb-2"></i>
+                    <h3>${% for fine in fines %}{% if fine.status == 'paid' %}{{ fine.amount|add:0 }}{% else %}0.00{% endif %}{% empty %}0.00{% endfor %}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Paid Fines</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-info">
+            <div class="card-body">
+                <div class="text-info">
+                    <i class="fas fa-list fa-3x mb-2"></i>
+                    <h3>{{ fines|length }}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Total Fines</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center shadow-sm h-100 border-secondary">
+            <div class="card-body">
+                <div class="text-secondary">
+                    <i class="fas fa-ban fa-3x mb-2"></i>
+                    <h3>{% for fine in fines %}{% if fine.status == 'waived' %}1{% else %}0{% endif %}{% empty %}0{% endfor %}</h3>
+                </div>
+                <p class="card-text text-muted mb-0">Waived Fines</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fines Table -->
+{% if fines %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i> Fine History
+                        </h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="fineFilter" id="filterAll" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="filterAll">All</label>
+
+                            <input type="radio" class="btn-check" name="fineFilter" id="filterPending" autocomplete="off">
+                            <label class="btn btn-outline-warning" for="filterPending">Pending</label>
+
+                            <input type="radio" class="btn-check" name="fineFilter" id="filterPaid" autocomplete="off">
+                            <label class="btn btn-outline-success" for="filterPaid">Paid</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-book"></i> Book</th>
+                                    <th><i class="fas fa-info-circle"></i> Reason</th>
+                                    <th><i class="fas fa-dollar-sign"></i> Amount</th>
+                                    <th><i class="fas fa-calendar-plus"></i> Created</th>
+                                    <th><i class="fas fa-calendar-check"></i> Paid</th>
+                                    <th><i class="fas fa-flag"></i> Status</th>
+                                    <th><i class="fas fa-cogs"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fine in fines %}
+                                    <tr class="fine-row fine-{{ fine.status }} {% if fine.status == 'pending' %}table-warning{% elif fine.status == 'paid' %}table-success{% elif fine.status == 'waived' %}table-info{% endif %}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if fine.loan.book.book_cover %}
+                                                    <img src="{{ fine.loan.book.book_cover.url }}" class="rounded me-2" style="width: 40px; height: 50px; object-fit: cover;" alt="{{ fine.loan.book.title }}">
+                                                {% else %}
+                                                    <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
+                                                        <i class="fas fa-book text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <strong class="text-primary">{{ fine.loan.book.title|truncatechars:25 }}</strong><br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar"></i> Loan: {{ fine.loan.loan_date|date:"M d, Y" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary mb-1">{{ fine.reason }}</span><br>
+                                            {% if fine.loan.due_date %}
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock text-danger"></i> Due: {{ fine.loan.due_date|date:"M d, Y" }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <h5 class="mb-1 {% if fine.status == 'pending' %}text-danger{% elif fine.status == 'paid' %}text-success{% else %}text-muted{% endif %}">
+                                                ${{ fine.amount }}
+                                            </h5>
+                                            {% if fine.status == 'pending' %}
+                                                <small class="text-danger">Outstanding</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-calendar-plus text-muted"></i>
+                                            {{ fine.created_date|date:"M d, Y" }}<br>
+                                            <small class="text-muted">{{ fine.created_date|time:"g:i A" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if fine.paid_date %}
+                                                <i class="fas fa-calendar-check text-success"></i>
+                                                {{ fine.paid_date|date:"M d, Y" }}<br>
+                                                <small class="text-muted">{{ fine.paid_date|time:"g:i A" }}</small>
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="fas fa-minus"></i> Not paid
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if fine.status == 'pending' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock"></i> Pending
+                                                </span>
+                                            {% elif fine.status == 'paid' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> Paid
+                                                </span>
+                                            {% elif fine.status == 'waived' %}
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-gift"></i> Waived
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group-vertical btn-group-sm">
+                                                <a href="{% url 'book_detail' fine.loan.book.id %}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i> View Book
+                                                </a>
+                                                {% if fine.status == 'pending' %}
+                                                    <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#payModal{{ fine.id }}">
+                                                        <i class="fas fa-credit-card"></i> Pay Now
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Individual Pay Modal -->
+                                    {% if fine.status == 'pending' %}
+                                        <div class="modal fade" id="payModal{{ fine.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-warning">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-credit-card"></i> Pay Fine
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="text-center mb-3">
+                                                            <h4>Pay ${{ fine.amount }} Fine</h4>
+                                                            <p class="text-muted">For: {{ fine.loan.book.title }}</p>
+                                                        </div>
+                                                        
+                                                        <div class="card bg-light">
+                                                            <div class="card-body">
+                                                                <h6>Payment Options:</h6>
+                                                                <ul class="list-unstyled">
+                                                                    <li><i class="fas fa-building"></i> Visit library front desk</li>
+                                                                    <li><i class="fas fa-phone"></i> Call: +1 (555) 123-4567</li>
+                                                                    <li><i class="fas fa-envelope"></i> Email: payments@library.com</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <a href="tel:+15551234567" class="btn btn-warning">
+                                                            <i class="fas fa-phone"></i> Call Library
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if total_pending > 0 %}
+                    <div class="card-footer bg-warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Total Outstanding: ${{ total_pending }}</strong>
+                            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                <i class="fas fa-credit-card"></i> Pay All Fines
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow text-center">
+                <div class="card-body py-5">
+                    <i class="fas fa-medal fa-5x text-success mb-4"></i>
+                    <h3>Excellent Record!</h3>
+                    <p class="lead text-muted">You have no fines in your account history.</p>
+                    <p>Keep returning books on time to maintain your perfect record!</p>
+                    <div class="mt-4">
+                        <a href="{% url 'book_list' %}" class="btn btn-primary me-2">
+                            <i class="fas fa-book"></i> Browse Books
+                        </a>
+                        <a href="{% url 'my_loans' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-history"></i> View Loan History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Payment Information Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-credit-card"></i> Payment Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white text-center">
+                                <i class="fas fa-building fa-2x mb-2"></i>
+                                <h6>In-Person Payment</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li><strong>Location:</strong> Library Front Desk</li>
+                                    <li><strong>Hours:</strong> Mon-Fri: 9AM-8PM</li>
+                                    <li><strong>Weekend:</strong> Sat-Sun: 10AM-6PM</li>
+                                    <li><strong>Accepted:</strong> Cash, Card, Check</li>
+                                </ul>
+                                <div class="alert alert-info">
+                                    <small><i class="fas fa-info-circle"></i> Bring your library card for faster service</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white text-center">
+                                <i class="fas fa-phone fa-2x mb-2"></i>
+                                <h6>Phone Payment</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li><strong>Phone:</strong> +1 (555) 123-4567</li>
+                                    <li><strong>Hours:</strong> Mon-Fri: 9AM-5PM</li>
+                                    <li><strong>Payment:</strong> Credit/Debit Cards</li>
+                                    <li><strong>Fee:</strong> No processing fee</li>
+                                </ul>
+                                <div class="alert alert-success">
+                                    <small><i class="fas fa-shield-alt"></i> Secure payment processing</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0"><i class="fas fa-envelope"></i> Mail Payment</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Send Check To:</strong><br>
+                                    Library Management System<br>
+                                    Attn: Fine Payments<br>
+                                    123 Library Street<br>
+                                    City, State 12345
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-warning">
+                                        <small>
+                                            <i class="fas fa-exclamation-triangle"></i> 
+                                            Include your library card number on the check memo
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="tel:+15551234567" class="btn btn-success">
+                    <i class="fas fa-phone"></i> Call Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fine filtering functionality
+    const filterButtons = document.querySelectorAll('input[name="fineFilter"]');
+    const fineRows = document.querySelectorAll('.fine-row');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const filter = this.id.replace('filter', '').toLowerCase();
+            
+            fineRows.forEach(row => {
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else {
+                    const rowStatus = row.classList.contains(`fine-${filter}`);
+                    row.style.display = rowStatus ? '' : 'none';
+                }
+            });
+            
+            // Update table visibility
+            updateTableVisibility();
+        });
+    });
+    
+    function updateTableVisibility() {
+        const visibleRows = Array.from(fineRows).filter(row => row.style.display !== 'none');
+        const tableBody = document.querySelector('tbody');
+        
+        if (visibleRows.length === 0) {
+            // Show no results message
+            if (!document.querySelector('.no-results-row')) {
+                const noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-row';
+                noResultsRow.innerHTML = `
+                    <td colspan="7" class="text-center py-4">
+                        <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No fines match the selected filter.</p>
+                    </td>
+                `;
+                tableBody.appendChild(noResultsRow);
+            }
+        } else {
+            // Remove no results message if it exists
+            const noResultsRow = document.querySelector('.no-results-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+    }
+    
+    // Initialize table
+    updateTableVisibility();
+    
+    // Add tooltips to status badges
+    const statusBadges = document.querySelectorAll('.badge');
+    statusBadges.forEach(badge => {
+        if (badge.textContent.includes('Pending')) {
+            badge.title = 'This fine needs to be paid';
+        } else if (badge.textContent.includes('Paid')) {
+            badge.title = 'This fine has been successfully paid';
+        } else if (badge.textContent.includes('Waived')) {
+            badge.title = 'This fine has been waived by library staff';
+        }
+    });
+    
+    // Animate outstanding balance alert
+    const outstandingAlert = document.querySelector('.fine-alert');
+    if (outstandingAlert) {
+        setTimeout(() => {
+            outstandingAlert.classList.add('animate__animated', 'animate__pulse');
+        }, 1000);
+    }
+    
+    // Calculate and display fine statistics
+    function updateFineStats() {
+        const allFines = Array.from(fineRows);
+        const pendingFines = allFines.filter(row => row.classList.contains('fine-pending'));
+        const paidFines = allFines.filter(row => row.classList.contains('fine-paid'));
+        const waivedFines = allFines.filter(row => row.classList.contains('fine-waived'));
+        
+        // You can add more statistical calculations here
+        console.log(`Fine Statistics - Total: ${allFines.length}, Pending: ${pendingFines.length}, Paid: ${paidFines.length}, Waived: ${waivedFines.length}`);
+    }
+    
+    updateFineStats();
+    
+    // Add print functionality
+    const printBtn = document.createElement('button');
+    printBtn.className = 'btn btn-outline-secondary btn-sm ms-2';
+    printBtn.innerHTML = '<i class="fas fa-print"></i> Print';
+    printBtn.onclick = function() {
+        window.print();
+    };
+    
+    const cardHeader = document.querySelector('.card-header .d-flex');
+    if (cardHeader) {
+        cardHeader.appendChild(printBtn);
+    }
+});
+
+// Print styles
+const printStyles = `
+    @media print {
+        .btn, .modal, .alert, .card-footer { display: none !important; }
+        .card { border: 1px solid #000 !important; }
+        .table { font-size: 12px; }
+        body { print-color-adjust: exact; }
+    }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = printStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock %}

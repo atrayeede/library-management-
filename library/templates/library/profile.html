@@ -1,0 +1,256 @@
+<!-- library/templates/library/profile.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}My Profile - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-user"></i> My Profile</h2>
+    </div>
+</div>
+
+<!-- Alerts for important info -->
+{% if pending_fines %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-danger fine-alert">
+                <h5><i class="fas fa-exclamation-triangle"></i> Outstanding Fines</h5>
+                <p>You have pending fines totaling ${{ pending_fines|length }}. Please pay your fines to continue borrowing books.</p>
+                <a href="{% url 'my_fines' %}" class="btn btn-danger btn-sm">View Fines</a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<div class="row">
+    <!-- Profile Information -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-edit"></i> Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger">{{ form.phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
+                                {{ form.date_of_birth }}
+                                {% if form.date_of_birth.errors %}
+                                    <div class="text-danger">{{ form.date_of_birth.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                        {{ form.address }}
+                        {% if form.address.errors %}
+                            <div class="text-danger">{{ form.address.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.profile_picture.id_for_label }}" class="form-label">Profile Picture</label>
+                        {{ form.profile_picture }}
+                        {% if form.profile_picture.errors %}
+                            <div class="text-danger">{{ form.profile_picture.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Summary -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-user-circle"></i> Profile Summary</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Profile Picture">
+                {% else %}
+                    <i class="fas fa-user-circle fa-5x text-muted mb-3"></i>
+                {% endif %}
+                
+                <h5>{{ user.get_full_name|default:user.username }}</h5>
+                <p class="text-muted">Member since {{ profile.membership_date|date:"M Y" }}</p>
+                
+                <hr>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6>{{ user_loans|length }}</h6>
+                        <small class="text-muted">Recent Loans</small>
+                    </div>
+                    <div class="col-6">
+                        <h6>{{ user_reviews|length }}</h6>
+                        <small class="text-muted">Reviews</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'my_loans' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-book-reader"></i> My Loans
+                    </a>
+                    <a href="{% url 'my_reservations' %}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-bookmark"></i> My Reservations
+                    </a>
+                    <a href="{% url 'my_fines' %}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-dollar-sign"></i> My Fines
+                    </a>
+                    <a href="{% url 'book_list' %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-search"></i> Browse Books
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h3><i class="fas fa-history"></i> Recent Activity</h3>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Loans -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-book-reader"></i> Recent Loans</h6>
+            </div>
+            <div class="card-body">
+                {% if user_loans %}
+                    {% for loan in user_loans %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div>
+                                <small><strong>{{ loan.book.title|truncatechars:25 }}</strong></small><br>
+                                <small class="text-muted">{{ loan.loan_date|date:"M d" }}</small>
+                            </div>
+                            <span class="badge bg-{% if loan.status == 'active' %}success{% elif loan.status == 'overdue' %}danger{% else %}secondary{% endif %}">
+                                {{ loan.get_status_display }}
+                            </span>
+                        </div>
+                    {% endfor %}
+                    <a href="{% url 'my_loans' %}" class="btn btn-sm btn-outline-primary w-100">View All</a>
+                {% else %}
+                    <p class="text-muted">No recent loans</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Reservations -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-bookmark"></i> Recent Reservations</h6>
+            </div>
+            <div class="card-body">
+                {% if user_reservations %}
+                    {% for reservation in user_reservations %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div>
+                                <small><strong>{{ reservation.book.title|truncatechars:25 }}</strong></small><br>
+                                <small class="text-muted">{{ reservation.reservation_date|date:"M d" }}</small>
+                            </div>
+                            <span class="badge bg-{% if reservation.status == 'pending' %}warning{% elif reservation.status == 'available' %}success{% else %}secondary{% endif %}">
+                                {{ reservation.get_status_display }}
+                            </span>
+                        </div>
+                    {% endfor %}
+                    <a href="{% url 'my_reservations' %}" class="btn btn-sm btn-outline-info w-100">View All</a>
+                {% else %}
+                    <p class="text-muted">No recent reservations</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Reviews -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-star"></i> Recent Reviews</h6>
+            </div>
+            <div class="card-body">
+                {% if user_reviews %}
+                    {% for review in user_reviews %}
+                        <div class="mb-3 pb-2 border-bottom">
+                            <small><strong>{{ review.book.title|truncatechars:25 }}</strong></small><br>
+                            <div class="rating">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star{% if forloop.counter > review.rating %} text-muted{% endif %} small"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">{{ review.created_date|date:"M d" }}</small>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No reviews yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

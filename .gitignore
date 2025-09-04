@@ -1,0 +1,34 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+venv/
+ENV/
+env/
+*.env
+
+# Django database
+db.sqlite3
+
+# Migrations (optional – keep if you want clean repo)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Static & media (collected/generated files)
+staticfiles/
+media/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

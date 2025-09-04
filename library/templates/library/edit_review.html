@@ -1,0 +1,453 @@
+<!-- library/templates/library/edit_review.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}Edit Review - {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'book_list' %}" class="text-decoration-none">Books</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'book_detail' book.id %}" class="text-decoration-none">{{ book.title|truncatechars:30 }}</a></li>
+                <li class="breadcrumb-item active">Edit Review</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit"></i> Edit Your Review
+                </h4>
+                <small>Update your thoughts about "{{ book.title }}"</small>
+            </div>
+            <div class="card-body">
+                <!-- Book Information Summary -->
+                <div class="row mb-4 p-3 bg-light rounded">
+                    <div class="col-md-2">
+                        {% if book.book_cover %}
+                            <img src="{{ book.book_cover.url }}" class="img-fluid rounded shadow-sm" alt="{{ book.title }}" style="max-height: 120px;">
+                        {% else %}
+                            <div class="bg-white d-flex align-items-center justify-content-center rounded shadow-sm" style="height: 120px; width: 80px;">
+                                <i class="fas fa-book fa-2x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-10">
+                        <h5 class="text-primary mb-2">{{ book.title }}</h5>
+                        <p class="text-muted mb-1">
+                            <i class="fas fa-user-edit"></i>
+                            <strong>Author(s):</strong>
+                            {% for author in book.authors.all %}
+                                {{ author.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                        <p class="text-muted mb-1">
+                            <i class="fas fa-calendar"></i>
+                            <strong>Originally reviewed:</strong> {{ review.created_date|date:"F j, Y" }}
+                        </p>
+                        {% if review.updated_date != review.created_date %}
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-clock"></i>
+                                <strong>Last updated:</strong> {{ review.updated_date|date:"F j, Y" }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Current Review Display -->
+                <div class="card bg-light mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-eye"></i> Current Review
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="rating mb-2">
+                            <strong>Rating:</strong>
+                            {% for i in "12345" %}
+                                <i class="fas fa-star{% if forloop.counter > review.rating %} text-muted{% else %} text-warning{% endif %} fa-lg ms-1"></i>
+                            {% endfor %}
+                            <span class="ms-2 text-muted">({{ review.rating }}/5 stars)</span>
+                        </div>
+                        <p class="mb-2"><strong>Title:</strong> {{ review.title }}</p>
+                        <p class="mb-0"><strong>Review:</strong></p>
+                        <div class="border rounded p-2 mt-1 bg-white">
+                            {{ review.comment|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Form -->
+                <form method="post" id="reviewForm">
+                    {% csrf_token %}
+                    
+                    <!-- Rating Section -->
+                    <div class="mb-4">
+                        <label for="{{ form.rating.id_for_label }}" class="form-label">
+                            <i class="fas fa-star text-warning"></i> 
+                            <strong>Your Rating</strong> <span class="text-danger">*</span>
+                        </label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.rating }}
+                                {% if form.rating.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.rating.errors %}
+                                            <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body py-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i> Rating Guide:
+                                        </small>
+                                        <ul class="list-unstyled small mb-0">
+                                            <li><i class="fas fa-star text-warning"></i> 1 = Poor</li>
+                                            <li><i class="fas fa-star text-warning"></i> 2 = Fair</li>
+                                            <li><i class="fas fa-star text-warning"></i> 3 = Good</li>
+                                            <li><i class="fas fa-star text-warning"></i> 4 = Very Good</li>
+                                            <li><i class="fas fa-star text-warning"></i> 5 = Excellent</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review Title -->
+                    <div class="mb-4">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="fas fa-heading text-primary"></i> 
+                            <strong>Review Title</strong> <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-pen"></i></span>
+                            {{ form.title }}
+                        </div>
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.title.errors %}
+                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb"></i> Give your review a catchy title that summarizes your thoughts.
+                        </div>
+                    </div>
+
+                    <!-- Review Content -->
+                    <div class="mb-4">
+                        <label for="{{ form.comment.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment-alt text-primary"></i> 
+                            <strong>Your Review</strong> <span class="text-danger">*</span>
+                        </label>
+                        {{ form.comment }}
+                        {% if form.comment.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.comment.errors %}
+                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            Share your detailed thoughts about this book. What did you like? What could be improved?
+                            Help other readers decide if this book is right for them.
+                        </div>
+                        <div id="charCount" class="form-text text-end">
+                            <small class="text-muted">Characters: <span id="currentCount">0</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" id="updateBtn">
+                                    <i class="fas fa-save"></i> Update Review
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="previewBtn" data-bs-toggle="modal" data-bs-target="#previewModal">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{% url 'book_detail' book.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                    <i class="fas fa-trash"></i> Delete Review
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warning about changes -->
+                    <div class="alert alert-info mt-3" id="changeWarning" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Unsaved Changes:</strong> You have made changes to your review. Don't forget to save them!
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye"></i> Review Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <div class="rating mb-2" id="previewRating">
+                                    <!-- Stars will be populated by JavaScript -->
+                                </div>
+                                <h6 class="text-primary" id="previewTitle">Review Title</h6>
+                                <div id="previewComment" class="mb-2">Review content will appear here...</div>
+                                <small class="text-muted">
+                                    <i class="fas fa-user-circle"></i> {{ user.get_full_name|default:user.username }}
+                                    - Today
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="document.getElementById('reviewForm').submit();">
+                    <i class="fas fa-save"></i> Save Review
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Delete Review
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <h5>Are you sure you want to delete this review?</h5>
+                    <p class="text-muted">This action cannot be undone. Your review and rating will be permanently removed.</p>
+                    
+                    <div class="card bg-light mt-3">
+                        <div class="card-body py-2">
+                            <small><strong>Review to be deleted:</strong></small><br>
+                            <small class="text-muted">"{{ review.title }}" - {{ review.rating }} stars</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <a href="{% url 'delete_review' review.id %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Yes, Delete Review
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('reviewForm');
+    const titleInput = document.getElementById('id_title');
+    const commentTextarea = document.getElementById('id_comment');
+    const ratingSelect = document.getElementById('id_rating');
+    const updateBtn = document.getElementById('updateBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    const changeWarning = document.getElementById('changeWarning');
+    const charCount = document.getElementById('currentCount');
+    
+    // Store original values
+    const originalValues = {
+        title: titleInput.value,
+        comment: commentTextarea.value,
+        rating: ratingSelect.value
+    };
+    
+    // Character count for comment
+    function updateCharCount() {
+        const count = commentTextarea.value.length;
+        charCount.textContent = count;
+        
+        if (count > 1000) {
+            charCount.parentElement.classList.add('text-warning');
+        } else {
+            charCount.parentElement.classList.remove('text-warning');
+        }
+    }
+    
+    // Check for changes
+    function checkForChanges() {
+        const hasChanges = 
+            titleInput.value !== originalValues.title ||
+            commentTextarea.value !== originalValues.comment ||
+            ratingSelect.value !== originalValues.rating;
+        
+        if (hasChanges) {
+            changeWarning.style.display = 'block';
+            updateBtn.classList.add('btn-warning');
+            updateBtn.classList.remove('btn-primary');
+        } else {
+            changeWarning.style.display = 'none';
+            updateBtn.classList.add('btn-primary');
+            updateBtn.classList.remove('btn-warning');
+        }
+    }
+    
+    // Preview functionality
+    function updatePreview() {
+        const rating = parseInt(ratingSelect.value) || 0;
+        const title = titleInput.value || 'Review Title';
+        const comment = commentTextarea.value || 'Review content will appear here...';
+        
+        // Update preview rating stars
+        const previewRating = document.getElementById('previewRating');
+        let starsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= rating) {
+                starsHtml += '<i class="fas fa-star text-warning fa-lg"></i>';
+            } else {
+                starsHtml += '<i class="fas fa-star text-muted fa-lg"></i>';
+            }
+        }
+        starsHtml += `<span class="ms-2 text-muted">(${rating}/5 stars)</span>`;
+        previewRating.innerHTML = starsHtml;
+        
+        // Update preview content
+        document.getElementById('previewTitle').textContent = title;
+        document.getElementById('previewComment').innerHTML = comment.replace(/\n/g, '<br>');
+    }
+    
+    // Event listeners
+    titleInput.addEventListener('input', checkForChanges);
+    commentTextarea.addEventListener('input', function() {
+        updateCharCount();
+        checkForChanges();
+    });
+    ratingSelect.addEventListener('change', checkForChanges);
+    
+    previewBtn.addEventListener('click', updatePreview);
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        updateBtn.disabled = true;
+    });
+    
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        const hasChanges = 
+            titleInput.value !== originalValues.title ||
+            commentTextarea.value !== originalValues.comment ||
+            ratingSelect.value !== originalValues.rating;
+        
+        if (hasChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    
+    // Initialize
+    updateCharCount();
+    checkForChanges();
+    
+    // Auto-save functionality (optional)
+    let autoSaveTimer;
+    function scheduleAutoSave() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(function() {
+            // You can implement auto-save to localStorage here
+            const reviewData = {
+                title: titleInput.value,
+                comment: commentTextarea.value,
+                rating: ratingSelect.value,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('review_draft_{{ review.id }}', JSON.stringify(reviewData));
+        }, 2000);
+    }
+    
+    titleInput.addEventListener('input', scheduleAutoSave);
+    commentTextarea.addEventListener('input', scheduleAutoSave);
+    ratingSelect.addEventListener('change', scheduleAutoSave);
+    
+    // Load draft if available
+    const savedDraft = localStorage.getItem('review_draft_{{ review.id }}');
+    if (savedDraft) {
+        try {
+            const draftData = JSON.parse(savedDraft);
+            const draftAge = new Date() - new Date(draftData.timestamp);
+            
+            // Only restore if draft is less than 1 hour old
+            if (draftAge < 3600000) {
+                if (confirm('A recent draft of this review was found. Would you like to restore it?')) {
+                    titleInput.value = draftData.title;
+                    commentTextarea.value = draftData.comment;
+                    ratingSelect.value = draftData.rating;
+                    updateCharCount();
+                    checkForChanges();
+                }
+            }
+        } catch (e) {
+            console.log('Error loading draft:', e);
+        }
+    }
+    
+    // Clear draft on successful submission
+    form.addEventListener('submit', function() {
+        localStorage.removeItem('review_draft_{{ review.id }}');
+    });
+});
+
+// Rating select enhancement
+document.getElementById('id_rating').addEventListener('change', function() {
+    const value = this.value;
+    const labels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    
+    // Remove any existing feedback
+    const existingFeedback = this.parentNode.querySelector('.rating-feedback');
+    if (existingFeedback) {
+        existingFeedback.remove();
+    }
+    
+    if (value) {
+        const feedback = document.createElement('small');
+        feedback.className = 'rating-feedback text-muted ms-2';
+        feedback.innerHTML = `<i class="fas fa-info-circle"></i> ${labels[value]}`;
+        this.parentNode.appendChild(feedback);
+    }
+});
+</script>
+{% endblock %}

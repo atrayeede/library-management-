@@ -1,0 +1,394 @@
+<!-- library/templates/library/book_detail.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}{{ book.title }} - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Book Cover and Actions -->
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-body text-center">
+                {% if book.book_cover %}
+                    <img src="{{ book.book_cover.url }}" class="img-fluid book-cover rounded mb-3" alt="{{ book.title }}" style="max-height: 400px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center book-cover mb-3 rounded" style="height: 400px;">
+                        <i class="fas fa-book fa-5x text-muted"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- Availability Status -->
+                <div class="mb-3">
+                    {% if book.available_copies > 0 %}
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-check-circle"></i> {{ book.available_copies }} Available
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">
+                            <i class="fas fa-times-circle"></i> Currently Unavailable
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                {% if user.is_authenticated %}
+                    <div class="d-grid gap-2">
+                        {% if can_borrow %}
+                            <a href="{% url 'borrow_book' book.id %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-book-reader"></i> Borrow Book
+                            </a>
+                            <small class="text-muted">14-day loan period</small>
+                        {% elif user_loan %}
+                            <a href="{% url 'return_book' user_loan.id %}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-undo"></i> Return Book
+                            </a>
+                            <div class="alert alert-info mt-2 py-2">
+                                <small>
+                                    <i class="fas fa-calendar"></i> Due: {{ user_loan.due_date|date:"M d, Y" }}
+                                    {% if user_loan.is_overdue %}
+                                        <br><span class="text-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> Overdue!
+                                        </span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% elif can_reserve %}
+                            <a href="{% url 'reserve_book' book.id %}" class="btn btn-info btn-lg">
+                                <i class="fas fa-bookmark"></i> Reserve Book
+                            </a>
+                            <small class="text-muted">7-day pickup window</small>
+                        {% elif user_reservation %}
+                            <a href="{% url 'cancel_reservation' user_reservation.id %}" class="btn btn-outline-danger btn-lg">
+                                <i class="fas fa-times"></i> Cancel Reservation
+                            </a>
+                            <div class="alert reservation-alert mt-2 py-2">
+                                <small>
+                                    <i class="fas fa-clock"></i> Status: {{ user_reservation.get_status_display }}
+                                    {% if user_reservation.status == 'available' %}
+                                        <br><span class="text-success">
+                                            <i class="fas fa-check"></i> Ready for pickup!
+                                        </span>
+                                    {% elif user_reservation.status == 'pending' %}
+                                        <br><span class="text-warning">
+                                            <i class="fas fa-hourglass-half"></i> In queue
+                                        </span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% else %}
+                            <button class="btn btn-secondary btn-lg" disabled>
+                                <i class="fas fa-ban"></i> Not Available
+                            </button>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <p class="mb-2">Please login to borrow or reserve books.</p>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'login' %}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                            <a href="{% url 'register' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus"></i> Register
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Info Card -->
+        <div class="card shadow mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> Quick Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6 text-center">
+                        <i class="fas fa-eye fa-2x text-primary mb-1"></i>
+                        <p class="small mb-0">Views</p>
+                        <strong>{{ book.view_count|default:0 }}</strong>
+                    </div>
+                    <div class="col-6 text-center">
+                        <i class="fas fa-heart fa-2x text-danger mb-1"></i>
+                        <p class="small mb-0">Likes</p>
+                        <strong>{{ book.like_count|default:0 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Book Details -->
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <!-- Book Title and Rating -->
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h1 class="mb-2">{{ book.title }}</h1>
+                        {% if book.average_rating %}
+                            <div class="rating mb-2">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star{% if forloop.counter > book.average_rating %} text-muted{% else %} text-warning{% endif %}"></i>
+                                {% endfor %}
+                                <span class="ms-2 text-muted">({{ book.average_rating|floatformat:1 }} stars from {{ book.num_reviews }} review{{ book.num_reviews|pluralize }})</span>
+                            </div>
+                        {% else %}
+                            <div class="text-muted mb-2">
+                                <i class="fas fa-star-o"></i> No ratings yet
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if book.category %}
+                        <span class="badge bg-primary fs-6">{{ book.category.name }}</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Authors -->
+                <div class="mb-3">
+                    <h5 class="text-primary">
+                        <i class="fas fa-user-edit"></i> 
+                        Author{{ book.authors.count|pluralize }}:
+                    </h5>
+                    <p class="fs-5">
+                        {% for author in book.authors.all %}
+                            <span class="badge bg-light text-dark border">{{ author.name }}</span>
+                            {% if not forloop.last %} {% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+                
+                <!-- Book Metadata -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <p class="mb-1"><i class="fas fa-barcode text-primary"></i> <strong>ISBN:</strong> {{ book.isbn }}</p>
+                                <p class="mb-1"><i class="fas fa-building text-primary"></i> <strong>Publisher:</strong> {{ book.publisher }}</p>
+                                <p class="mb-0"><i class="fas fa-calendar text-primary"></i> <strong>Published:</strong> {{ book.publication_date|date:"F j, Y" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <p class="mb-1"><i class="fas fa-file-alt text-primary"></i> <strong>Pages:</strong> {{ book.pages }}</p>
+                                <p class="mb-1"><i class="fas fa-language text-primary"></i> <strong>Language:</strong> {{ book.language }}</p>
+                                <p class="mb-0"><i class="fas fa-dollar-sign text-primary"></i> <strong>Price:</strong> ${{ book.price }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Availability Details -->
+                <div class="card border-primary mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Availability Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h4 class="text-primary">{{ book.total_copies }}</h4>
+                                <p class="small text-muted mb-0">Total Copies</p>
+                            </div>
+                            <div class="col-4">
+                                <h4 class="{% if book.available_copies > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ book.available_copies }}
+                                </h4>
+                                <p class="small text-muted mb-0">Available Now</p>
+                            </div>
+                            <div class="col-4">
+                                <h4 class="text-warning">{{ book.total_copies|add:book.available_copies|add:"-"|add:book.available_copies }}</h4>
+                                <p class="small text-muted mb-0">On Loan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="mb-4">
+                    <h5 class="text-primary">
+                        <i class="fas fa-align-left"></i> Description
+                    </h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="text-justify">{{ book.description|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reviews Section -->
+<hr class="my-5">
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3><i class="fas fa-comments text-primary"></i> Reviews & Ratings</h3>
+            
+            {% if user.is_authenticated %}
+            {% if not user_review %}
+            {% if has_borrowed %}
+            <a href="{% url 'add_review' book.id %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Write a Review
+            </a>
+        {% else %}
+            <span class="text-muted">
+                <i class="fas fa-info-circle"></i> Borrow this book to write a review
+            </span>
+        {% endif %}
+    {% endif %}
+{% endif %}
+</div>
+        
+        <!-- User's Review (if exists) -->
+        {% if user_review %}
+            <div class="card border-primary mb-4 shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user"></i> Your Review
+                    </h6>
+                    <a href="{% url 'edit_review' user_review.id %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="rating mb-2">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star{% if forloop.counter > user_review.rating %} text-muted{% else %} text-warning{% endif %} fa-lg"></i>
+                                {% endfor %}
+                                <span class="ms-2 text-muted">({{ user_review.rating }}/5 stars)</span>
+                            </div>
+                            <h6 class="text-primary">{{ user_review.title }}</h6>
+                            <p class="mb-2">{{ user_review.comment|linebreaks }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> Reviewed on {{ user_review.created_date|date:"F j, Y" }}
+                                {% if user_review.updated_date != user_review.created_date %}
+                                    (Updated {{ user_review.updated_date|date:"M j, Y" }})
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Other Reviews -->
+        {% if reviews %}
+            <div class="row">
+                {% for review in reviews %}
+                    {% if review.id != user_review.id %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="rating">
+                                            {% for i in "12345" %}
+                                                <i class="fas fa-star{% if forloop.counter > review.rating %} text-muted{% else %} text-warning{% endif %}"></i>
+                                            {% endfor %}
+                                        </div>
+                                        <small class="text-muted">{{ review.created_date|date:"M d, Y" }}</small>
+                                    </div>
+                                    <h6 class="text-primary">{{ review.title }}</h6>
+                                    <p class="card-text">{{ review.comment|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-circle"></i> 
+                                            {{ review.user.get_full_name|default:review.user.username }}
+                                        </small>
+                                        {% if review.comment|wordcount > 20 %}
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal{{ review.id }}">
+                                                Read More
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Review Modal -->
+                        <div class="modal fade" id="reviewModal{{ review.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ review.title }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="rating mb-3">
+                                            {% for i in "12345" %}
+                                                <i class="fas fa-star{% if forloop.counter > review.rating %} text-muted{% else %} text-warning{% endif %} fa-lg"></i>
+                                            {% endfor %}
+                                            <span class="ms-2">({{ review.rating }}/5 stars)</span>
+                                        </div>
+                                        <p>{{ review.comment|linebreaks }}</p>
+                                        <hr>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-circle"></i> 
+                                            {{ review.user.get_full_name|default:review.user.username }}
+                                            - {{ review.created_date|date:"F j, Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% else %}
+            {% if not user_review %}
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h5>No reviews yet</h5>
+                    <p>Be the first to review this book after borrowing it!</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Related Books Section (Optional) -->
+<hr class="my-5">
+<div class="row">
+    <div class="col-12">
+        <h4><i class="fas fa-book-open text-primary"></i> You Might Also Like</h4>
+        <div class="row">
+            {% for related_book in related_books|slice:":4" %}
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        {% if related_book.book_cover %}
+                            <img src="{{ related_book.book_cover.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ related_book.title }}">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-book fa-2x text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title">{{ related_book.title|truncatechars:30 }}</h6>
+                            <p class="card-text small text-muted flex-grow-1">
+                                {% for author in related_book.authors.all %}
+                                    {{ author.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+                            <a href="{% url 'book_detail' related_book.id %}" class="btn btn-outline-primary btn-sm mt-auto">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <p class="text-muted">No related books found.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

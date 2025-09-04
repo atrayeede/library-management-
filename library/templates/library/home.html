@@ -1,0 +1,166 @@
+<!-- library/templates/library/home.html -->
+{% extends 'library/base.html' %}
+
+{% block title %}Home - Library Management System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="bg-primary text-white rounded p-5 text-center">
+            <h1 class="display-4"><i class="fas fa-book-open"></i> Welcome to Our Library</h1>
+            <p class="lead">Discover thousands of books, manage your reading journey, and connect with fellow readers.</p>
+            {% if not user.is_authenticated %}
+                <a href="{% url 'register' %}" class="btn btn-light btn-lg me-3">Join Today</a>
+                <a href="{% url 'book_list' %}" class="btn btn-outline-light btn-lg">Browse Books</a>
+            {% else %}
+                <a href="{% url 'book_list' %}" class="btn btn-light btn-lg me-3">Browse Books</a>
+                <a href="{% url 'profile' %}" class="btn btn-outline-light btn-lg">My Dashboard</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mb-5">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <i class="fas fa-book fa-3x mb-3"></i>
+                <h3>{{ total_books }}</h3>
+                <p>Total Books</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-success text-white">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h3>{{ total_users }}</h3>
+                <p>Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-warning text-white">
+            <div class="card-body">
+                <i class="fas fa-book-reader fa-3x mb-3"></i>
+                <h3>{{ active_loans }}</h3>
+                <p>Active Loans</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <i class="fas fa-star fa-3x mb-3"></i>
+                <h3>4.8</h3>
+                <p>Avg Rating</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Books -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="fas fa-fire"></i> Featured Books</h2>
+        {% if featured_books %}
+            <div class="row">
+                {% for book in featured_books %}
+                    <div class="col-md-4 col-lg-2 mb-4">
+                        <div class="card h-100">
+                            {% if book.book_cover %}
+                                <img src="{{ book.book_cover.url }}" class="card-img-top" alt="{{ book.title }}">
+                            {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="fas fa-book fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">{{ book.title|truncatechars:30 }}</h6>
+                                <p class="card-text text-muted small">
+                                    {% for author in book.authors.all %}
+                                        {{ author.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+                                <div class="mt-auto">
+                                    {% if book.average_rating %}
+                                        <div class="rating mb-2">
+                                            {% for i in "12345" %}
+                                                <i class="fas fa-star{% if forloop.counter > book.average_rating %} text-muted{% endif %}"></i>
+                                            {% endfor %}
+                                            <small class="text-muted">({{ book.average_rating|floatformat:1 }})</small>
+                                        </div>
+                                    {% endif %}
+                                    <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm w-100">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-center">
+                <a href="{% url 'book_list' %}" class="btn btn-outline-primary">View All Books</a>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No books available at the moment.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="fas fa-star"></i> Why Choose Our Library?</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                        <h5>Easy Search</h5>
+                        <p class="text-muted">Find books quickly by title, author, category, or ISBN with our advanced search system.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-bookmark fa-3x text-primary mb-3"></i>
+                        <h5>Smart Reservations</h5>
+                        <p class="text-muted">Reserve books when they're not available and get notified when they're ready for pickup.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-comments fa-3x text-primary mb-3"></i>
+                        <h5>Community Reviews</h5>
+                        <p class="text-muted">Read and share reviews with fellow readers to discover your next favorite book.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+{% if not user.is_authenticated %}
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body text-center py-5">
+                <h3><i class="fas fa-user-plus"></i> Ready to Start Your Reading Journey?</h3>
+                <p class="lead">Join our community of book lovers today!</p>
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Sign Up Now</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
